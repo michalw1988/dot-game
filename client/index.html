@@ -87,6 +87,7 @@
 
 	var WIDTH = 1000;
 	var HEIGHT = 600;
+	var selfId = null;
 	var ctx = document.getElementById("ctx").getContext("2d");
 	ctx.font = '30px Arial';
 
@@ -96,26 +97,38 @@
 		socket.disconnect(); 
 	}
 	
+	socket.on('initPack',function(data){
+		selfId = data.selfId;
+	});
+	
 	socket.on('updatePack',function(data){
 		ctx.clearRect(0,0,WIDTH,HEIGHT);
 		teamRedDiv.innerHTML = "Team red:";
 		teamBlueDiv.innerHTML = "Team blue:";
 		// players
 		for(var i = 0; i < data.pack.length; i++) {
+			var isMe = "";
 			ctx.fillStyle = data.pack[i].team;
+			ctx.strokeStyle = data.pack[i].team;
 			ctx.beginPath();
 			ctx.arc(data.pack[i].x,data.pack[i].y,5,0,2*Math.PI);
-			ctx.fill();
+			
+			if(data.pack[i].id === selfId) {
+				isMe = "[me]";
+				ctx.fill();
+			} else {
+				ctx.stroke();
+			}
 			
 			if(data.pack[i].team === 'red'){
-				teamRedDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score +')</div>';
+				teamRedDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
 			} else {
-				teamBlueDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score +')</div>';
+				teamBlueDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
 			}
 		}
 		
 		// factories
-		ctx.strokeStyle = 'red';
+		ctx.strokeStyle = 'green';
 		for(var i = 0; i < data.factories.length; i++) {
 			ctx.beginPath();
 			ctx.arc(data.factories[i].x,data.factories[i].y,10,0,2*Math.PI);

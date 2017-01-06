@@ -43,7 +43,7 @@ var Player = function(id){
 		x:250,
 		y:250,
 		id:id,
-		name:"" + Math.floor(10*Math.random()),
+		name:"",
 		team:"",
 		pressingRight:false,
 		pressingLeft:false,
@@ -93,6 +93,10 @@ io.sockets.on('connection', function(socket){
 	socket.on('playerJoined',function(data){
 		player.name = data.name;
 		player.team = data.team;
+	});
+	
+	socket.emit('initPack',{
+		selfId:socket.id,
 	});
 });
 
