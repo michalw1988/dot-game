@@ -12,6 +12,31 @@ console.log("Server started.");
 
 var SOCKET_LIST = {};
 var PLAYER_LIST = {};
+var FACTORY_LIST = {};
+
+var Factory = function(x,y){
+	var self = {
+		x:x,
+		y:y,
+	}
+	return self;
+}
+
+FACTORY_LIST[0] = Factory(75,300);
+FACTORY_LIST[1] = Factory(120,150);
+FACTORY_LIST[2] = Factory(120,450);
+FACTORY_LIST[3] = Factory(250,50);
+FACTORY_LIST[4] = Factory(250,550);
+FACTORY_LIST[5] = Factory(400,190);
+FACTORY_LIST[6] = Factory(400,410);
+
+FACTORY_LIST[7] = Factory(600,190);
+FACTORY_LIST[8] = Factory(600,410);
+FACTORY_LIST[9] = Factory(750,50);
+FACTORY_LIST[10] = Factory(750,550);
+FACTORY_LIST[11] = Factory(880,150);
+FACTORY_LIST[12] = Factory(880,450);
+FACTORY_LIST[13] = Factory(925,300);
 
 var Player = function(id){
 	var self = {
@@ -19,6 +44,7 @@ var Player = function(id){
 		y:250,
 		id:id,
 		number:"" + Math.floor(10*Math.random()),
+		color:'#'+(0x1000000+(Math.random())*0xffffff).toString(16).substr(1,6),
 		pressingRight:false,
 		pressingLeft:false,
 		pressingUp:false,
@@ -66,17 +92,27 @@ io.sockets.on('connection', function(socket){
 
 setInterval(function(){
 	var pack = [];
+	var factories = [];
 	for(var i in PLAYER_LIST){
 		var player = PLAYER_LIST[i];
 		player.updatePosition();
 		pack.push({
 			x:player.x,
 			y:player.y,
-			number:player.number
+			number:player.number,
+			color:player.color,
+			id:SOCKET_LIST[i].id,
 		});	
+	}
+	for (var i in FACTORY_LIST){
+		var factory = FACTORY_LIST[i];
+		factories.push({
+			x:factory.x,
+			y:factory.y,
+		});
 	}
 	for(var i in SOCKET_LIST){
 		var socket = SOCKET_LIST[i];
-		socket.emit('newPositions',pack);
+		socket.emit('updatePack',{pack,factories});
 	}
 },1000/25);

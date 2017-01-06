@@ -1,17 +1,51 @@
-=== dotGame === <br>
-<canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
+<center>
+	=== dotGame ===
+	<br>
+	<table>
+		<tbody>
+			<tr>
+				<td>
+					<canvas id="ctx" width="1000" height="600" style="border:1px solid #000000;"></canvas>
+				</td>
+				<td>
+					<div id="players-div" style="height:600px;width:200px; border:1px solid #000000;"></div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	
+</center>
 
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
+	var WIDTH = 1000;
+	var HEIGHT = 600;
 	var ctx = document.getElementById("ctx").getContext("2d");
 	ctx.font = '30px Arial';
+	var playersDiv = document.getElementById("players-div");
 
 	var socket = io();
 	
-	socket.on('newPositions',function(data){
-		ctx.clearRect(0,0,500,500);
-		for(var i = 0; i < data.length; i++)
-			ctx.fillText(data[i].number,data[i].x,data[i].y);
+	window.onbeforeunload = function() {
+		socket.disconnect(); 
+	}
+	
+	socket.on('updatePack',function(data){
+		ctx.clearRect(0,0,WIDTH,HEIGHT);
+		playersDiv.innerHTML = "Players:";
+		// players
+		for(var i = 0; i < data.pack.length; i++) {
+			ctx.fillStyle = data.pack[i].color;
+			ctx.fillText(data.pack[i].number, data.pack[i].x, data.pack[i].y);
+			playersDiv.innerHTML += '<div style="color:'+ data.pack[i].color +'">' + data.pack[i].id + '</div>';
+		}
+		// factories
+		ctx.strokeStyle = 'red';
+		for(var i = 0; i < data.factories.length; i++) {
+			ctx.beginPath();
+			ctx.arc(data.factories[i].x,data.factories[i].y,10,0,2*Math.PI);
+			ctx.stroke();
+		}
 	});
 	
 	document.onkeydown = function(event){
