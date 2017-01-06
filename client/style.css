@@ -1,0 +1,48 @@
+body {
+	font-family: "Verdana";
+	background-color: #eeeeee;
+}
+
+#joinDiv {
+	position: absolute;
+	padding: 5px;
+	top: calc(50% - 125px);
+	left: calc(50% - 200px);
+    background-color: #dddddd;	
+}
+
+#joinDiv-username {
+	background-color: #eeeeee;
+	border: 1px solid #888888;
+	width: 100%;
+}
+
+#joinDiv-button {
+	background-color: #eeeeee;
+	border: 1px solid #888888;
+	width: 100px;
+	height: 24px;
+	font-family: "Verdana";
+	font-size: 16px;
+}
+
+#joinDiv-message {
+	color: red;
+	position: absolute;
+	width: 100%;
+	bottom: 7px;
+}
+
+#teamRedDiv {
+	color: red;
+	background-color: #ffbbbb;
+	margin:5px;
+	padding:5px;
+}
+
+#teamBlueDiv {
+	color: blue;
+	background-color: #bbbbff;
+	margin:5px;
+	padding:5px;
+}

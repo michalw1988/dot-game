@@ -1,28 +1,94 @@
+<head>
+	<link rel="stylesheet" type="text/css" href="client/style.css">
+</head>
+
 <center>
-	=== dotGame ===
-	<br>
-	<table>
-		<tbody>
-			<tr>
-				<td>
-					<canvas id="ctx" width="1000" height="600" style="border:1px solid #000000;"></canvas>
-				</td>
-				<td>
-					<div id="players-div" style="height:600px;width:200px; border:1px solid #000000;"></div>
-				</td>
-			</tr>
-		</tbody>
-	</table>
-	
+	<div id="joinDiv" style="height:150px;width:400px; border:1px solid #000000;">
+		Join the game
+		<table style="margin:10px;">
+			<tbody>
+				<tr>
+					<td style="width:30%;">
+						Your name:
+					</td>
+					<td>
+						<input id="joinDiv-username" type="text"</input><br>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Your team:
+					</td>
+					<td>
+						<input type="radio" name="team" id="teamRed" value="red">red
+						<input type="radio" name="team" id="teamBlue" value="blue">blue
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<button id="joinDiv-button">Join now!</button>
+		<div id="joinDiv-message"></div>	
+	</div>
+
+	<div id="gameDiv" style="display:none;">
+		<table>
+			<tbody>
+				<tr>
+					<td>
+						<canvas id="ctx" width="1000" height="600" style="border:1px solid #000000;"></canvas>
+					</td>
+					<td>
+						<div id="players-div" style="height:600px;width:200px; border:1px solid #000000;">
+							<div id="teamRedDiv"></div>
+							<div id="teamBlueDiv"></div>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 </center>
 
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
+	var joinDiv = document.getElementById("joinDiv");
+	var joinDivUsername = document.getElementById("joinDiv-username");
+	var joinDivTeamRed = document.getElementById("teamRed");
+	var joinDivTeamBlue = document.getElementById("teamBlue");
+	var joinDivButton = document.getElementById("joinDiv-button");
+	var joinDivMessage = document.getElementById("joinDiv-message");
+	var gameDiv = document.getElementById("gameDiv");
+	var playersDiv = document.getElementById("players-div");
+	var teamRedDiv = document.getElementById("teamRedDiv");
+	var teamBlueDiv = document.getElementById("teamBlueDiv");
+	var team = "";
+	
+	joinDivButton.onclick = function(){
+		joinDivMessage.innerHTML = "";
+		if(joinDivUsername.value === ""){
+			joinDivMessage.innerHTML += "Enter username. ";
+		}
+		if(!joinDivTeamRed.checked && !joinDivTeamBlue.checked){
+			joinDivMessage.innerHTML += "Select team. ";
+		} else {
+			if(joinDivUsername.value !== ""){
+				if (joinDivTeamRed.checked){
+					team = 'red';
+				} else {
+					team = 'blue';
+				}
+				joinDiv.style.display = 'none';
+				gameDiv.style.display = 'inline-block';
+				socket.emit('playerJoined',{name:joinDivUsername.value,team:team});
+			}
+		}
+	}
+
+
 	var WIDTH = 1000;
 	var HEIGHT = 600;
 	var ctx = document.getElementById("ctx").getContext("2d");
 	ctx.font = '30px Arial';
-	var playersDiv = document.getElementById("players-div");
 
 	var socket = io();
 	
@@ -32,13 +98,22 @@
 	
 	socket.on('updatePack',function(data){
 		ctx.clearRect(0,0,WIDTH,HEIGHT);
-		playersDiv.innerHTML = "Players:";
+		teamRedDiv.innerHTML = "Team red:";
+		teamBlueDiv.innerHTML = "Team blue:";
 		// players
 		for(var i = 0; i < data.pack.length; i++) {
-			ctx.fillStyle = data.pack[i].color;
-			ctx.fillText(data.pack[i].number, data.pack[i].x, data.pack[i].y);
-			playersDiv.innerHTML += '<div style="color:'+ data.pack[i].color +'">' + data.pack[i].id + '</div>';
+			ctx.fillStyle = data.pack[i].team;
+			ctx.beginPath();
+			ctx.arc(data.pack[i].x,data.pack[i].y,5,0,2*Math.PI);
+			ctx.fill();
+			
+			if(data.pack[i].team === 'red'){
+				teamRedDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score +')</div>';
+			} else {
+				teamBlueDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score +')</div>';
+			}
 		}
+		
 		// factories
 		ctx.strokeStyle = 'red';
 		for(var i = 0; i < data.factories.length; i++) {

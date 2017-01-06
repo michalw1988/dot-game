@@ -43,13 +43,14 @@ var Player = function(id){
 		x:250,
 		y:250,
 		id:id,
-		number:"" + Math.floor(10*Math.random()),
-		color:'#'+(0x1000000+(Math.random())*0xffffff).toString(16).substr(1,6),
+		name:"" + Math.floor(10*Math.random()),
+		team:"",
 		pressingRight:false,
 		pressingLeft:false,
 		pressingUp:false,
 		pressingDown:false,
 		maxSpd:10,
+		score:0,
 	}
 	self.updatePosition = function(){
 		if(self.pressingRight)
@@ -88,6 +89,11 @@ io.sockets.on('connection', function(socket){
 			player.pressingDown = data.state;
 	});
 	
+	
+	socket.on('playerJoined',function(data){
+		player.name = data.name;
+		player.team = data.team;
+	});
 });
 
 setInterval(function(){
@@ -99,8 +105,9 @@ setInterval(function(){
 		pack.push({
 			x:player.x,
 			y:player.y,
-			number:player.number,
-			color:player.color,
+			name:player.name,
+			team:player.team,
+			score:player.score,
 			id:SOCKET_LIST[i].id,
 		});	
 	}
