@@ -46,3 +46,17 @@ body {
 	margin:5px;
 	padding:5px;
 }
+
+#hudDiv{
+	background-color: #ffffbb;
+	margin:5px;
+	padding:5px;
+}
+
+#playerAmmoDiv{
+	background-color: #ff0000;
+}
+
+#playerHpDiv{
+	background-color: #00ff00;
+}

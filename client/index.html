@@ -38,9 +38,18 @@
 						<canvas id="ctx" width="1000" height="600" style="border:1px solid #000000;"></canvas>
 					</td>
 					<td>
-						<div id="players-div" style="height:600px;width:200px; border:1px solid #000000;">
+						<div id="players-div" style="height:600px;width:200px; border:1px solid #000000;">	
+							<div id="hudDiv">
+								Ammo:<br>
+								<div id="playerAmmoDiv">&nbsp;</div>
+								Hp:<br>
+								<div id="playerHpDiv">&nbsp;</div>
+							</div>
+							<hr>
 							<div id="teamRedDiv"></div>
 							<div id="teamBlueDiv"></div>
+							<hr>
+							Chat
 						</div>
 					</td>
 				</tr>
@@ -61,7 +70,11 @@
 	var playersDiv = document.getElementById("players-div");
 	var teamRedDiv = document.getElementById("teamRedDiv");
 	var teamBlueDiv = document.getElementById("teamBlueDiv");
+	var hudDiv = document.getElementById("hudDiv");
+	var playerAmmoDiv = document.getElementById("playerAmmoDiv");
+	var playerHpDiv = document.getElementById("playerHpDiv");
 	var team = "";
+	var inGame = false;
 	
 	joinDivButton.onclick = function(){
 		joinDivMessage.innerHTML = "";
@@ -79,6 +92,7 @@
 				}
 				joinDiv.style.display = 'none';
 				gameDiv.style.display = 'inline-block';
+				inGame = true;
 				socket.emit('playerJoined',{name:joinDivUsername.value,team:team});
 			}
 		}
@@ -88,10 +102,19 @@
 	var WIDTH = 1000;
 	var HEIGHT = 600;
 	var selfId = null;
+	var map = null;
 	var ctx = document.getElementById("ctx").getContext("2d");
 	ctx.font = '30px Arial';
 
 	var socket = io();
+	
+	var mouseX = 0;
+	var mouseY = 0;
+	
+	var posX = 0;
+	var posY = 0;
+	var angle = 0;
+	 
 	
 	window.onbeforeunload = function() {
 		socket.disconnect(); 
@@ -99,12 +122,28 @@
 	
 	socket.on('initPack',function(data){
 		selfId = data.selfId;
+		map = data.map;
 	});
 	
 	socket.on('updatePack',function(data){
+		
 		ctx.clearRect(0,0,WIDTH,HEIGHT);
 		teamRedDiv.innerHTML = "Team red:";
 		teamBlueDiv.innerHTML = "Team blue:";
+		
+		// zones
+		ctx.fillStyle = '#ffbbbb';
+		ctx.fillRect(20,20,100,100);
+		ctx.fillStyle = '#bbbbff';
+		ctx.fillRect(880,480,100,100);
+		// map
+		ctx.fillStyle = '#666666';
+		for(var y = 0; y < map.length; y++){
+			for(var x = 0; x < map[y].length; x++){
+				if(map[y][x] === 1)
+					ctx.fillRect(x*10,y*10,10,10);	
+			}
+		}
 		// players
 		for(var i = 0; i < data.pack.length; i++) {
 			var isMe = "";
@@ -112,48 +151,82 @@
 			ctx.strokeStyle = data.pack[i].team;
 			ctx.beginPath();
 			ctx.arc(data.pack[i].x,data.pack[i].y,5,0,2*Math.PI);
-			
+			// player's gun
+			var angle = data.pack[i].angle * Math.PI/180;
+			ctx.moveTo(data.pack[i].x, data.pack[i].y);
+			ctx.lineTo(data.pack[i].x + 9*Math.cos(angle), data.pack[i].y + 9*Math.sin(angle));
+			ctx.stroke();
+			// player's dot
 			if(data.pack[i].id === selfId) {
 				isMe = "[me]";
+				posX = data.pack[i].x;
+				posY = data.pack[i].y;
+				angle = data.pack[i].angle;
 				ctx.fill();
+				// stats on hud
+				playerAmmoDiv.innerHTML = data.pack[i].ammo;
+				playerAmmoDiv.style.width = data.pack[i].ammo + '%';
+				playerHpDiv.innerHTML = data.pack[i].hp;
+				playerHpDiv.style.width = data.pack[i].hp + '%';
 			} else {
 				ctx.stroke();
 			}
-			
+			ctx.closePath();
+			// team members
 			if(data.pack[i].team === 'red'){
 				teamRedDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
 			} else {
 				teamBlueDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
 			}
 		}
-		
-		// factories
-		ctx.strokeStyle = 'green';
-		for(var i = 0; i < data.factories.length; i++) {
+		// bullets
+		for(var i = 0; i < data.bullets_pack.length; i++) {
+			var bullet = data.bullets_pack[i];
+			var angle = bullet.angle * Math.PI/180;
+			ctx.strokeStyle = bullet.color;
 			ctx.beginPath();
-			ctx.arc(data.factories[i].x,data.factories[i].y,10,0,2*Math.PI);
+			ctx.moveTo(bullet.x, bullet.y);
+			ctx.lineTo(bullet.x + 5*Math.cos(angle), bullet.y + 5*Math.sin(angle));
+			ctx.closePath();
 			ctx.stroke();
 		}
 	});
 	
 	document.onkeydown = function(event){
-		if(event.keyCode === 68) // d
-			socket.emit('keyPress',{inputId:'right',state:true});
-		else if(event.keyCode === 83) // s
-			socket.emit('keyPress',{inputId:'down',state:true});
-		else if(event.keyCode === 65) // a
-			socket.emit('keyPress',{inputId:'left',state:true});
-		else if(event.keyCode === 87) // w
-			socket.emit('keyPress',{inputId:'up',state:true});
+		if(inGame){
+			if(event.keyCode === 68) // d
+				socket.emit('keyPress',{inputId:'right',state:true});
+			else if(event.keyCode === 83) // s
+				socket.emit('keyPress',{inputId:'down',state:true});
+			else if(event.keyCode === 65) // a
+				socket.emit('keyPress',{inputId:'left',state:true});
+			else if(event.keyCode === 87) // w
+				socket.emit('keyPress',{inputId:'up',state:true});
+		}
 	}
 	document.onkeyup = function(event){
-		if(event.keyCode === 68) // d
-			socket.emit('keyPress',{inputId:'right',state:false});
-		else if(event.keyCode === 83) // s
-			socket.emit('keyPress',{inputId:'down',state:false});
-		else if(event.keyCode === 65) // a
-			socket.emit('keyPress',{inputId:'left',state:false});
-		else if(event.keyCode === 87) // w
-			socket.emit('keyPress',{inputId:'up',state:false});
+		if(inGame){
+			if(event.keyCode === 68) // d
+				socket.emit('keyPress',{inputId:'right',state:false});
+			else if(event.keyCode === 83) // s
+				socket.emit('keyPress',{inputId:'down',state:false});
+			else if(event.keyCode === 65) // a
+				socket.emit('keyPress',{inputId:'left',state:false});
+			else if(event.keyCode === 87) // w
+				socket.emit('keyPress',{inputId:'up',state:false});
+		}
+	}
+	document.onmousemove = function(event){
+		if(inGame){
+			mouseX = event.pageX - gameDiv.offsetLeft;
+			mouseY = event.pageY - gameDiv.offsetTop;
+			var angle = Math.atan2(mouseY - posY, mouseX - posX) * 180 / Math.PI;
+			socket.emit('keyPress',{inputId:'angle',angle});
+		}
+	}
+	document.onmousedown = function(event){
+		if(inGame){
+			socket.emit('keyPress',{inputId:'click'});
+		}
 	}
 </script>
