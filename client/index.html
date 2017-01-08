@@ -40,6 +40,8 @@
 					<td>
 						<div id="players-div" style="height:600px;width:200px; border:1px solid #000000;">	
 							<div id="hudDiv">
+								Kills:<br>
+								<div id="playerKillsDiv">&nbsp;</div>
 								Ammo:<br>
 								<div id="playerAmmoDiv">&nbsp;</div>
 								Hp:<br>
@@ -71,6 +73,7 @@
 	var teamRedDiv = document.getElementById("teamRedDiv");
 	var teamBlueDiv = document.getElementById("teamBlueDiv");
 	var hudDiv = document.getElementById("hudDiv");
+	var playerKillsDiv = document.getElementById("playerKillsDiv");
 	var playerAmmoDiv = document.getElementById("playerAmmoDiv");
 	var playerHpDiv = document.getElementById("playerHpDiv");
 	var team = "";
@@ -162,8 +165,10 @@
 				posX = data.pack[i].x;
 				posY = data.pack[i].y;
 				angle = data.pack[i].angle;
+				angle = data.pack[i].angle;
 				ctx.fill();
 				// stats on hud
+				playerKillsDiv.innerHTML = data.pack[i].score;
 				playerAmmoDiv.innerHTML = data.pack[i].ammo;
 				playerAmmoDiv.style.width = data.pack[i].ammo + '%';
 				playerHpDiv.innerHTML = data.pack[i].hp;

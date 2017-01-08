@@ -98,9 +98,13 @@ var Bullet = function(id,x,y,angle,parentId){
 	self.updatePosition = function(){
 		self.x += self.spdX;
 		self.y += self.spdY;
-		if (isCollision(5,self.x,self.y) || isSomeoneHit(self.x,self.y)){
+		if (isCollision(5,self.x,self.y)){
 			delete BULLET_LIST[self.id];
 		}
+		else if (isSomeoneHit(self.x,self.y,self.parentId)){
+			delete BULLET_LIST[self.id];
+		}
+		
 	}
 	return self;
 }
@@ -257,8 +261,8 @@ var isCollision = function(type, selfX, selfY){ // 1-right 2-down 3-left 4-up 5-
 		else if (type === 4 &&
 			posX+5 > wall.x*10 && 
 			posX-5 < wall.x*10 + 10 && 
-			posY+5 - 3> wall.y*10 &&
-			posY-5 - 3< wall.y*10 + 10
+			posY+5 - 3 > wall.y*10 &&
+			posY-5 - 3 < wall.y*10 + 10
 		){
 			return true;
 		}
@@ -273,6 +277,37 @@ var isCollision = function(type, selfX, selfY){ // 1-right 2-down 3-left 4-up 5-
 	}
 }
 	
-var isSomeoneHit = function(bulletX,bulletY){
-	
+var isSomeoneHit = function(bulletX,bulletY,parentId){
+	for (var i in PLAYER_LIST){
+		var player = PLAYER_LIST[i];
+		var d = Math.sqrt( (bulletX-player.x)*(bulletX-player.x) + (bulletY-player.y)*(bulletY-player.y) );
+		if (d < 5){
+			console.log('player ' + player.name + 'hit!');
+			PLAYER_LIST[i].hp -= 20;
+			if(PLAYER_LIST[i].hp <= 0){
+				PLAYER_LIST[i].hp = 100;
+				PLAYER_LIST[parentId].score++;
+				if(PLAYER_LIST[i].team === 'red'){
+					player.x = Math.random()*100+20;
+					player.y = Math.random()*100+20;
+				} else {
+					player.x = Math.random()*100+880;
+					player.y = Math.random()*100+480;
+				}
+			}
+			return true;
+		}
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+

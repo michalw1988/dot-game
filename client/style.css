@@ -53,6 +53,10 @@ body {
 	padding:5px;
 }
 
+#playerKillsDiv{
+	background-color: #ffffff;
+}
+
 #playerAmmoDiv{
 	background-color: #ff0000;
 }
