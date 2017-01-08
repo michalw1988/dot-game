@@ -125,7 +125,7 @@
 	
 	socket.on('initPack',function(data){
 		selfId = data.selfId;
-		map = data.map;
+		map = data.walls;
 	});
 	
 	socket.on('updatePack',function(data){
@@ -141,11 +141,9 @@
 		ctx.fillRect(880,480,100,100);
 		// map
 		ctx.fillStyle = '#666666';
-		for(var y = 0; y < map.length; y++){
-			for(var x = 0; x < map[y].length; x++){
-				if(map[y][x] === 1)
-					ctx.fillRect(x*10,y*10,10,10);	
-			}
+		for (var i in map){
+			var wall = map[i];
+			ctx.fillRect(wall.x,wall.y,wall.width,wall.height);
 		}
 		// players
 		for(var i = 0; i < data.pack.length; i++) {
