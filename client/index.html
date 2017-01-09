@@ -1,4 +1,5 @@
 <head>
+	<title>dotGame</title>
 	<link rel="stylesheet" type="text/css" href="client/style.css">
 </head>
 
@@ -12,7 +13,7 @@
 						Your name:
 					</td>
 					<td>
-						<input id="joinDiv-username" type="text"</input><br>
+						<input id="joinDiv-username" type="text"></input><br>
 					</td>
 				</tr>
 				<tr>
@@ -38,7 +39,7 @@
 						<canvas id="ctx" width="1000" height="600" style="border:1px solid #000000;"></canvas>
 					</td>
 					<td>
-						<div id="players-div" style="height:600px;width:200px; border:1px solid #000000;">	
+						<div id="playersDiv" style="height:600px;width:200px; border:1px solid #000000;">	
 							<div id="hudDiv">
 								Kills:<br>
 								<div id="playerKillsDiv">&nbsp;</div>
@@ -51,7 +52,8 @@
 							<div id="teamRedDiv"></div>
 							<div id="teamBlueDiv"></div>
 							<hr>
-							Chat
+							<div id="chatDiv"></div>
+							<input id="chatInput" type="text" placeholder="Enter your message"></input><br>
 						</div>
 					</td>
 				</tr>
@@ -69,13 +71,15 @@
 	var joinDivButton = document.getElementById("joinDiv-button");
 	var joinDivMessage = document.getElementById("joinDiv-message");
 	var gameDiv = document.getElementById("gameDiv");
-	var playersDiv = document.getElementById("players-div");
+	var playersDiv = document.getElementById("playersDiv");
 	var teamRedDiv = document.getElementById("teamRedDiv");
 	var teamBlueDiv = document.getElementById("teamBlueDiv");
 	var hudDiv = document.getElementById("hudDiv");
 	var playerKillsDiv = document.getElementById("playerKillsDiv");
 	var playerAmmoDiv = document.getElementById("playerAmmoDiv");
 	var playerHpDiv = document.getElementById("playerHpDiv");
+	var chatDiv = document.getElementById("chatDiv");
+	var chatInput = document.getElementById("chatInput");
 	var team = "";
 	var inGame = false;
 	
@@ -100,8 +104,7 @@
 			}
 		}
 	}
-
-
+	
 	var WIDTH = 1000;
 	var HEIGHT = 600;
 	var selfId = null;
@@ -129,6 +132,13 @@
 	});
 	
 	socket.on('updatePack',function(data){
+		var playerCount = 0;
+		for (var i in data.pack){
+			if (data.pack[i].inGame === true){
+				playerCount++;
+			}
+		}
+		document.title = 'dotGame (' + playerCount + ' players)';
 		
 		ctx.clearRect(0,0,WIDTH,HEIGHT);
 		teamRedDiv.innerHTML = "Team red:";
@@ -139,11 +149,36 @@
 		ctx.fillRect(20,20,100,100);
 		ctx.fillStyle = '#bbbbff';
 		ctx.fillRect(880,480,100,100);
+		ctx.fillStyle = '#bbffbb';
+		ctx.fillRect(20,520,60,60);
+		ctx.fillRect(920,20,60,60);
+		ctx.fillStyle = '#ffdd66';
+		ctx.fillRect(150,450,60,60);
+		ctx.fillRect(790,90,60,60);
 		// map
 		ctx.fillStyle = '#666666';
 		for (var i in map){
 			var wall = map[i];
 			ctx.fillRect(wall.x,wall.y,wall.width,wall.height);
+		}
+		// bonuses
+		for(var i = 0; i < data.bonus_pack.length; i++) {
+			var bonus = data.bonus_pack[i];
+			if (bonus.type === 1){
+				ctx.fillStyle = '#ff8800';
+				ctx.fillRect(bonus.x,bonus.y,9,9);
+				ctx.fillStyle = '#ffffff';
+				ctx.fillRect(bonus.x+2,bonus.y+1,1,7);
+				ctx.fillRect(bonus.x+4,bonus.y+1,1,7);
+				ctx.fillRect(bonus.x+6,bonus.y+1,1,7);
+				
+			} else {
+				ctx.fillStyle = '#00cc00';
+				ctx.fillRect(bonus.x,bonus.y,9,9);
+				ctx.fillStyle = '#ffffff';
+				ctx.fillRect(bonus.x+1,bonus.y+4,7,1);
+				ctx.fillRect(bonus.x+4,bonus.y+1,1,7);
+			}
 		}
 		// players
 		for(var i = 0; i < data.pack.length; i++) {
@@ -195,6 +230,11 @@
 		}
 	});
 	
+	socket.on('chatMessageToDisplay',function(data){
+		chatDiv.innerHTML += '<div>' + data + '</div>';
+		chatDiv.scrollTop = chatDiv.scrollHeight;
+	});
+	
 	document.onkeydown = function(event){
 		if(inGame){
 			if(event.keyCode === 68) // d
@@ -228,8 +268,19 @@
 		}
 	}
 	document.onmousedown = function(event){
-		if(inGame){
+		mouseX = event.pageX - gameDiv.offsetLeft;
+		mouseY = event.pageY - gameDiv.offsetTop;
+		if(inGame && mouseX > 0 && mouseX < 1000 && mouseY > 0 && mouseY < 600){
 			socket.emit('keyPress',{inputId:'click'});
 		}
 	}
+	
+	chatInput.onkeyup = function(e){
+		if(e.keyCode === 13){
+			socket.emit('chatMessage',{id:selfId,message:chatInput.value});
+			chatInput.value = '';
+		}
+	};
+
+	
 </script>

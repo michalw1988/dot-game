@@ -12,8 +12,8 @@ console.log("Server started.");
 
 var SOCKET_LIST = {};
 var PLAYER_LIST = {};
-var FACTORY_LIST = {};
 var BULLET_LIST = {};
+var BONUS_LIST = {};
 
 var walls = [];
 walls.push({x:0,y:0,width:1000,height:10});
@@ -34,6 +34,57 @@ walls.push({x:0,y:0,width:0,height:0});
 walls.push({x:0,y:0,width:0,height:0});
 walls.push({x:0,y:0,width:0,height:0});
 
+var Bonus = function(id){
+	var self = {
+		id:id,
+		type:0,
+		x:0,
+		y:0,
+	}
+	self.init = function(){
+		self.type = Math.round(Math.random()*2);
+		if (self.type === 1){ // type = ammo
+			if(Math.random() < 0.5){ // zone 1
+				self.x = 151 + Math.floor(Math.random()*50);
+				self.y = 451 + Math.floor(Math.random()*50);
+			} else { // zone 2
+				self.x = 791 + Math.floor(Math.random()*50);
+				self.y = 91 + Math.floor(Math.random()*50);
+			}
+		} else { // type = hp
+			if(Math.random() < 0.5){ // zone 1
+				self.x = 21 + Math.floor(Math.random()*50);
+				self.y = 521 + Math.floor(Math.random()*50);
+			} else {// zone 2
+				self.x = 921 + Math.floor(Math.random()*50);
+				self.y = 21 + Math.floor(Math.random()*50);
+			}
+		}
+	}
+	self.checkIfTaken = function(){
+		for(var i in PLAYER_LIST){
+			var player = PLAYER_LIST[i];
+			if (player.x >= self.x-4 &&
+				player.x <= self.x+13 &&
+				player.y >= self.y-4 &&
+				player.y <= self.y+13
+			){
+				if (this.type === 1){ // ammo
+					if (player.ammo < 100){
+						player.ammo = 100;
+						delete BONUS_LIST[self.id];
+					}
+				} else { // hp
+					if (player.hp < 100){
+						player.hp = 100;
+						delete BONUS_LIST[self.id];
+					}
+				}
+			}
+		}
+	}
+	return self;
+}
 
 var Bullet = function(id,x,y,angle,parentId){
 	var self = {
@@ -55,7 +106,6 @@ var Bullet = function(id,x,y,angle,parentId){
 		else if (isSomeoneHit(self.x,self.y,self.parentId)){
 			delete BULLET_LIST[self.id];
 		}
-		
 	}
 	return self;
 }
@@ -67,6 +117,7 @@ var Player = function(id){
 		id:id,
 		name:"",
 		team:"",
+		inGame:false,
 		angle:Math.random()*360,
 		score:0,
 		maxSpd:3,
@@ -98,6 +149,11 @@ io.sockets.on('connection', function(socket){
 	var player = Player(socket.id);
 	PLAYER_LIST[socket.id] = player;
 	
+	socket.emit('initPack',{
+		selfId:socket.id,
+		walls:walls,
+	});
+	
 	socket.on('disconnect',function(){
 		delete SOCKET_LIST[socket.id];
 		delete PLAYER_LIST[socket.id];
@@ -127,6 +183,7 @@ io.sockets.on('connection', function(socket){
 	socket.on('playerJoined',function(data){
 		player.name = data.name;
 		player.team = data.team;
+		player.inGame = true;
 		
 		if(data.team === 'red'){
 			player.x = Math.random()*100+20;
@@ -137,15 +194,29 @@ io.sockets.on('connection', function(socket){
 		}
 	});
 	
-	socket.emit('initPack',{
-		selfId:socket.id,
-		walls:walls,
+	socket.on('chatMessage',function(data){
+		var message = PLAYER_LIST[data.id].name + ': ' + data.message
+		for(var i in SOCKET_LIST){
+			var socket = SOCKET_LIST[i];
+			socket.emit('chatMessageToDisplay',message);
+		}
 	});
 });
 
 setInterval(function(){
+	// bonus creation
+	if(Math.random() < 0.02 && Object.keys(BONUS_LIST).length < 10){
+		id = Math.random();
+		var bonus = Bonus(id);
+		bonus.init();
+		BONUS_LIST[id] = bonus;
+		console.log('New bonus');
+		console.log('Bonuses: ' + Object.keys(BONUS_LIST).length);
+	}
+
 	var pack = [];
 	var bullets_pack = [];
+	var bonus_pack = [];
 	for(var i in PLAYER_LIST){
 		var player = PLAYER_LIST[i];
 		player.updatePosition();
@@ -159,6 +230,7 @@ setInterval(function(){
 			id:SOCKET_LIST[i].id,
 			ammo:player.ammo,
 			hp:player.hp,
+			inGame:player.inGame,
 		});	
 	}
 	for (var i in BULLET_LIST){
@@ -171,9 +243,18 @@ setInterval(function(){
 		});
 		bullet.updatePosition();
 	}
+	for (var i in BONUS_LIST){
+		var bonus = BONUS_LIST[i];
+		bonus_pack.push({
+			x:bonus.x,
+			y:bonus.y,
+			type:bonus.type,
+		});
+		bonus.checkIfTaken();
+	}
 	for(var i in SOCKET_LIST){
 		var socket = SOCKET_LIST[i];
-		socket.emit('updatePack',{pack,bullets_pack});
+		socket.emit('updatePack',{pack,bullets_pack,bonus_pack});
 	}
 },1000/25);
 

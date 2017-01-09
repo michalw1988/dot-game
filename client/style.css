@@ -33,6 +33,10 @@ body {
 	bottom: 7px;
 }
 
+#playersDiv{
+	font-size: 12px;
+}
+
 #teamRedDiv {
 	color: red;
 	background-color: #ffbbbb;
@@ -54,13 +58,30 @@ body {
 }
 
 #playerKillsDiv{
-	background-color: #ffffff;
+	font-weight: bold;
 }
 
 #playerAmmoDiv{
-	background-color: #ff0000;
+	background-color: #ff8800;
 }
 
 #playerHpDiv{
-	background-color: #00ff00;
+	background-color: #00cc00;
+}
+
+#chatDiv{
+	background-color: #eeeeee;
+	border: 1px solid #888888;
+	margin:5px;
+	padding:5px;
+	height: 150px;
+	overflow-y:scroll;
+}
+
+#chatInput{
+	margin:5px;
+	padding:5px;
+	width: calc(100% - 10px);
+	background-color: #eeeeee;
+	border: 1px solid #888888;
 }
