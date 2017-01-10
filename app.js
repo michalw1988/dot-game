@@ -21,18 +21,32 @@ walls.push({x:990,y:0,width:10,height:600});
 walls.push({x:0,y:590,width:1000,height:10});
 walls.push({x:0,y:0,width:10,height:600});
 
-walls.push({x:130,y:0,width:10,height:200});
-walls.push({x:0,y:190,width:80,height:10});
-walls.push({x:860,y:400,width:10,height:200});
-walls.push({x:920,y:400,width:80,height:10});
+walls.push({x:130,y:130,width:330,height:10});
+walls.push({x:540,y:130,width:370,height:10});
+walls.push({x:950,y:130,width:40,height:10});
+walls.push({x:90,y:460,width:370,height:10});
+walls.push({x:10,y:460,width:40,height:10});
+walls.push({x:540,y:460,width:330,height:10});
 
-walls.push({x:130,y:300,width:10,height:230});
-walls.push({x:130,y:520,width:630,height:10});
-walls.push({x:860,y:70,width:10,height:230});
-walls.push({x:240,y:70,width:630,height:10});
-walls.push({x:0,y:0,width:0,height:0});
-walls.push({x:0,y:0,width:0,height:0});
-walls.push({x:0,y:0,width:0,height:0});
+walls.push({x:130,y:130,width:10,height:340});
+walls.push({x:860,y:130,width:10,height:340});
+walls.push({x:220,y:200,width:10,height:200});
+walls.push({x:770,y:200,width:10,height:200});
+walls.push({x:220,y:240,width:480,height:10});
+walls.push({x:300,y:350,width:480,height:10});
+
+walls.push({x:150,y:70,width:10,height:60});
+walls.push({x:70,y:150,width:60,height:10});
+walls.push({x:870,y:440,width:60,height:10});
+walls.push({x:840,y:470,width:10,height:60});
+
+walls.push({x:420,y:10,width:10,height:60});
+walls.push({x:570,y:70,width:10,height:60});
+walls.push({x:420,y:470,width:10,height:60});
+walls.push({x:570,y:530,width:10,height:60});
+
+
+
 
 var Bonus = function(id){
 	var self = {
@@ -46,28 +60,32 @@ var Bonus = function(id){
 		if (self.type === 1){ // type = ammo
 			if(Math.random() < 0.5){ // zone 1
 				self.x = 151 + Math.floor(Math.random()*50);
-				self.y = 451 + Math.floor(Math.random()*50);
-			} else { // zone 2
+				self.y = 221 + Math.floor(Math.random()*150);
+			} else {// zone 2
 				self.x = 791 + Math.floor(Math.random()*50);
-				self.y = 91 + Math.floor(Math.random()*50);
+				self.y = 221 + Math.floor(Math.random()*150);
 			}
 		} else { // type = hp
-			if(Math.random() < 0.5){ // zone 1
-				self.x = 21 + Math.floor(Math.random()*50);
-				self.y = 521 + Math.floor(Math.random()*50);
-			} else {// zone 2
-				self.x = 921 + Math.floor(Math.random()*50);
-				self.y = 21 + Math.floor(Math.random()*50);
+			var rand = Math.random();
+			if(rand < 0.33){ // zone 1
+				self.x = 21 + Math.floor(Math.random()*90);
+				self.y = 481 + Math.floor(Math.random()*90);
+			} else if(rand > 0.33 && rand < 0.67) { // zone 2
+				self.x = 881 + Math.floor(Math.random()*90);
+				self.y = 21 + Math.floor(Math.random()*90);
+			} else { // zone 3
+				self.x = 431 + Math.floor(Math.random()*130);
+				self.y = 261 + Math.floor(Math.random()*70);
 			}
 		}
 	}
 	self.checkIfTaken = function(){
 		for(var i in PLAYER_LIST){
 			var player = PLAYER_LIST[i];
-			if (player.x >= self.x-4 &&
-				player.x <= self.x+13 &&
-				player.y >= self.y-4 &&
-				player.y <= self.y+13
+			if (player.x >= self.x-5 &&
+				player.x <= self.x+14 &&
+				player.y >= self.y-5 &&
+				player.y <= self.y+14
 			){
 				if (this.type === 1){ // ammo
 					if (player.ammo < 100){
@@ -92,8 +110,8 @@ var Bullet = function(id,x,y,angle,parentId){
 		x:x,
 		y:y,
 		angle:angle,
-		spdX:Math.cos(angle*Math.PI/180) * 6,
-		spdY:Math.sin(angle*Math.PI/180) * 6,
+		spdX:Math.cos(angle*Math.PI/180) * 8,
+		spdY:Math.sin(angle*Math.PI/180) * 8,
 		parentId:parentId,
 		color:PLAYER_LIST[parentId].team,
 	}
@@ -120,7 +138,7 @@ var Player = function(id){
 		inGame:false,
 		angle:Math.random()*360,
 		score:0,
-		maxSpd:3,
+		maxSpd:4,
 		pressingRight:false,
 		pressingLeft:false,
 		pressingUp:false,
@@ -171,7 +189,7 @@ io.sockets.on('connection', function(socket){
 		else if(data.inputId === 'angle')
 			player.angle = data.angle;
 		else if(data.inputId === 'click' && player.ammo > 0){
-			player.ammo--;
+			player.ammo -= 5;
 			var id = Math.random();
 			var bullet = Bullet(id,player.x,player.y,player.angle,player.id);
 			bullet.updatePosition();
@@ -185,7 +203,24 @@ io.sockets.on('connection', function(socket){
 		player.team = data.team;
 		player.inGame = true;
 		
-		if(data.team === 'red'){
+		if (data.team === 'auto'){
+			var redCount = 0;
+			var blueCount = 0;
+			for(var i in PLAYER_LIST){
+				if(PLAYER_LIST[i].team === 'red'){
+					redCount++;
+				} else if(PLAYER_LIST[i].team === 'blue'){
+					blueCount++;
+				}
+			}
+			if(blueCount > redCount){
+				player.team = 'red';
+			} else {
+				player.team = 'blue';
+			}
+		}
+		
+		if(player.team === 'red'){
 			player.x = Math.random()*100+20;
 			player.y = Math.random()*100+20;
 		} else {
@@ -210,8 +245,8 @@ setInterval(function(){
 		var bonus = Bonus(id);
 		bonus.init();
 		BONUS_LIST[id] = bonus;
-		console.log('New bonus');
-		console.log('Bonuses: ' + Object.keys(BONUS_LIST).length);
+		//console.log('New bonus');
+		//console.log('Bonuses: ' + Object.keys(BONUS_LIST).length);
 	}
 
 	var pack = [];
@@ -265,34 +300,34 @@ var isCollision = function(type, selfX, selfY){ // 1-right 2-down 3-left 4-up 5-
 		var wall = walls[i];
 		
 		if (type === 1 &&
-			posX+5 + 3 > wall.x && 
-			posX-5 + 3 < wall.x + wall.width && 
-			posY+5 > wall.y &&
-			posY-5 < wall.y + wall.height
+			posX+7 + 4 > wall.x && 
+			posX-7 + 4 < wall.x + wall.width && 
+			posY+7 > wall.y &&
+			posY-7 < wall.y + wall.height
 		){
 			return true;
 		}
 		else if (type === 2 &&
-			posX+5 > wall.x && 
-			posX-5 < wall.x + wall.width && 
-			posY+5 + 3 > wall.y &&
-			posY-5 + 3 < wall.y + wall.height
+			posX+7 > wall.x && 
+			posX-7 < wall.x + wall.width && 
+			posY+7 + 4 > wall.y &&
+			posY-7 + 4 < wall.y + wall.height
 		){
 			return true;
 		}
 		else if (type === 3 &&
-			posX+5 - 3 > wall.x && 
-			posX-5 - 3 < wall.x + wall.width && 
-			posY+5 > wall.y &&
-			posY-5 < wall.y + wall.height
+			posX+7 - 4 > wall.x && 
+			posX-7 - 4 < wall.x + wall.width && 
+			posY+7 > wall.y &&
+			posY-7 < wall.y + wall.height
 		){
 			return true;
 		}
 		else if (type === 4 &&
-			posX+5 > wall.x && 
-			posX-5 < wall.x + wall.width && 
-			posY+5 - 3 > wall.y &&
-			posY-5 - 3 < wall.y + wall.height
+			posX+7 > wall.x && 
+			posX-7 < wall.x + wall.width && 
+			posY+7 - 4 > wall.y &&
+			posY-7 - 4 < wall.y + wall.height
 		){
 			return true;
 		}
@@ -311,8 +346,8 @@ var isSomeoneHit = function(bulletX,bulletY,parentId){
 	for (var i in PLAYER_LIST){
 		var player = PLAYER_LIST[i];
 		var d = Math.sqrt( (bulletX-player.x)*(bulletX-player.x) + (bulletY-player.y)*(bulletY-player.y) );
-		if (d < 5){
-			PLAYER_LIST[i].hp -= 20;
+		if (d < 7){
+			PLAYER_LIST[i].hp -= 40;
 			if(PLAYER_LIST[i].hp <= 0){
 				PLAYER_LIST[i].hp = 100;
 				PLAYER_LIST[i].ammo = 100;

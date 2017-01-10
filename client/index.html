@@ -21,6 +21,7 @@
 						Your team:
 					</td>
 					<td>
+						<input type="radio" name="team" id="teamAuto" value="auto" checked>auto balance
 						<input type="radio" name="team" id="teamRed" value="red">red
 						<input type="radio" name="team" id="teamBlue" value="blue">blue
 					</td>
@@ -66,6 +67,7 @@
 <script>
 	var joinDiv = document.getElementById("joinDiv");
 	var joinDivUsername = document.getElementById("joinDiv-username");
+	var joinDivTeamAuto = document.getElementById("teamAuto");
 	var joinDivTeamRed = document.getElementById("teamRed");
 	var joinDivTeamBlue = document.getElementById("teamBlue");
 	var joinDivButton = document.getElementById("joinDiv-button");
@@ -87,15 +89,14 @@
 		joinDivMessage.innerHTML = "";
 		if(joinDivUsername.value === ""){
 			joinDivMessage.innerHTML += "Enter username. ";
-		}
-		if(!joinDivTeamRed.checked && !joinDivTeamBlue.checked){
-			joinDivMessage.innerHTML += "Select team. ";
 		} else {
 			if(joinDivUsername.value !== ""){
 				if (joinDivTeamRed.checked){
 					team = 'red';
-				} else {
+				} else if (joinDivTeamBlue.checked) {
 					team = 'blue';
+				} else {
+					team = 'auto';
 				}
 				joinDiv.style.display = 'none';
 				gameDiv.style.display = 'inline-block';
@@ -138,23 +139,28 @@
 				playerCount++;
 			}
 		}
-		document.title = 'dotGame (' + playerCount + ' players)';
+		if (playerCount === 1){
+			document.title = 'dotGame (' + playerCount + ' player)';
+		} else {
+			document.title = 'dotGame (' + playerCount + ' players)';
+		}
 		
 		ctx.clearRect(0,0,WIDTH,HEIGHT);
 		teamRedDiv.innerHTML = "Team red:";
 		teamBlueDiv.innerHTML = "Team blue:";
 		
 		// zones
-		ctx.fillStyle = '#ffbbbb';
+		ctx.fillStyle = '#ffbbbb'; // red area
 		ctx.fillRect(20,20,100,100);
-		ctx.fillStyle = '#bbbbff';
+		ctx.fillStyle = '#bbbbff'; // blue area
 		ctx.fillRect(880,480,100,100);
-		ctx.fillStyle = '#bbffbb';
-		ctx.fillRect(20,520,60,60);
-		ctx.fillRect(920,20,60,60);
-		ctx.fillStyle = '#ffdd66';
-		ctx.fillRect(150,450,60,60);
-		ctx.fillRect(790,90,60,60);
+		ctx.fillStyle = '#bbffbb'; // hp zones
+		ctx.fillRect(20,480,100,100);
+		ctx.fillRect(880,20,100,100);
+		ctx.fillRect(430,260,140,80);
+		ctx.fillStyle = '#ffee99'; // ammo zones
+		ctx.fillRect(150,220,60,160);
+		ctx.fillRect(790,220,60,160);
 		// map
 		ctx.fillStyle = '#666666';
 		for (var i in map){
@@ -186,11 +192,11 @@
 			ctx.fillStyle = data.pack[i].team;
 			ctx.strokeStyle = data.pack[i].team;
 			ctx.beginPath();
-			ctx.arc(data.pack[i].x,data.pack[i].y,5,0,2*Math.PI);
+			ctx.arc(data.pack[i].x,data.pack[i].y,7,0,2*Math.PI);
 			// player's gun
 			var angle = data.pack[i].angle * Math.PI/180;
 			ctx.moveTo(data.pack[i].x, data.pack[i].y);
-			ctx.lineTo(data.pack[i].x + 9*Math.cos(angle), data.pack[i].y + 9*Math.sin(angle));
+			ctx.lineTo(data.pack[i].x + 12*Math.cos(angle), data.pack[i].y + 12*Math.sin(angle));
 			ctx.stroke();
 			// player's dot
 			if(data.pack[i].id === selfId) {
@@ -202,9 +208,9 @@
 				ctx.fill();
 				// stats on hud
 				playerKillsDiv.innerHTML = data.pack[i].score;
-				playerAmmoDiv.innerHTML = data.pack[i].ammo;
+				//playerAmmoDiv.innerHTML = data.pack[i].ammo;
 				playerAmmoDiv.style.width = data.pack[i].ammo + '%';
-				playerHpDiv.innerHTML = data.pack[i].hp;
+				//playerHpDiv.innerHTML = data.pack[i].hp;
 				playerHpDiv.style.width = data.pack[i].hp + '%';
 			} else {
 				ctx.stroke();
