@@ -91,11 +91,19 @@ var Bonus = function(id){
 					if (player.ammo < 100){
 						player.ammo = 100;
 						delete BONUS_LIST[self.id];
+						for(var i in SOCKET_LIST){
+							var socket = SOCKET_LIST[i];
+							socket.emit('patricleEffect',{type:4,x:self.x,y:self.y,color:'orange'});
+						}
 					}
 				} else { // hp
 					if (player.hp < 100){
 						player.hp = 100;
 						delete BONUS_LIST[self.id];
+						for(var i in SOCKET_LIST){
+							var socket = SOCKET_LIST[i];
+							socket.emit('patricleEffect',{type:4,x:self.x,y:self.y,color:'green'});
+						}
 					}
 				}
 			}
@@ -145,6 +153,8 @@ var Player = function(id){
 		pressingDown:false,
 		ammo:100,
 		hp:100,
+		dead:false,
+		respawnCounter:0,
 	}
 	self.updatePosition = function(){
 		if(self.pressingRight && isCollision(1,self.x,self.y) !== true)
@@ -155,6 +165,26 @@ var Player = function(id){
 			self.y -= self.maxSpd;
 		if(self.pressingDown && isCollision(2,self.x,self.y) !== true)
 			self.y += self.maxSpd;
+			
+		
+		if(self.respawnCounter > 0){
+			self.respawnCounter--;
+		} else {
+			if (self.dead === true) {
+				if(self.team === 'red'){
+					self.x = Math.random()*100+20;
+					self.y = Math.random()*100+20;
+				} else {
+					self.x = Math.random()*100+880;
+					self.y = Math.random()*100+480;
+				}
+				self.dead = false;
+				for(var i in SOCKET_LIST){
+					var socket = SOCKET_LIST[i];
+					socket.emit('patricleEffect',{type:4,x:self.x,y:self.y,color:self.team});
+				}
+			}
+		}
 	}
 	return self;
 }
@@ -178,25 +208,26 @@ io.sockets.on('connection', function(socket){
 	});
 	
 	socket.on('keyPress',function(data){
-		if(data.inputId === 'left')
-			player.pressingLeft = data.state;
-		else if(data.inputId === 'right')
-			player.pressingRight = data.state;
-		else if(data.inputId === 'up')
-			player.pressingUp = data.state;
-		else if(data.inputId === 'down')
-			player.pressingDown = data.state;
-		else if(data.inputId === 'angle')
-			player.angle = data.angle;
-		else if(data.inputId === 'click' && player.ammo > 0){
-			player.ammo -= 5;
-			var id = Math.random();
-			var bullet = Bullet(id,player.x,player.y,player.angle,player.id);
-			bullet.updatePosition();
-			BULLET_LIST[id] = bullet;
+		if(player.dead === false){
+			if(data.inputId === 'left')
+				player.pressingLeft = data.state;
+			else if(data.inputId === 'right')
+				player.pressingRight = data.state;
+			else if(data.inputId === 'up')
+				player.pressingUp = data.state;
+			else if(data.inputId === 'down')
+				player.pressingDown = data.state;
+			else if(data.inputId === 'angle')
+				player.angle = data.angle;
+			else if(data.inputId === 'click' && player.ammo > 0){
+				player.ammo -= 5;
+				var id = Math.random();
+				var bullet = Bullet(id,player.x,player.y,player.angle,player.id);
+				bullet.updatePosition();
+				BULLET_LIST[id] = bullet;
+			}
 		}
 	});
-	
 	
 	socket.on('playerJoined',function(data){
 		player.name = data.name;
@@ -266,6 +297,7 @@ setInterval(function(){
 			ammo:player.ammo,
 			hp:player.hp,
 			inGame:player.inGame,
+			dead:player.dead,
 		});	
 	}
 	for (var i in BULLET_LIST){
@@ -336,7 +368,11 @@ var isCollision = function(type, selfX, selfY){ // 1-right 2-down 3-left 4-up 5-
 			posX < wall.x + wall.width && 
 			posY > wall.y &&
 			posY < wall.y + wall.height
-		){
+		){	
+			for(var i in SOCKET_LIST){
+				var socket = SOCKET_LIST[i];
+				socket.emit('patricleEffect',{type:3,x:posX,y:posY,color:'black'});
+			}
 			return true;
 		}
 	}
@@ -352,12 +388,19 @@ var isSomeoneHit = function(bulletX,bulletY,parentId){
 				PLAYER_LIST[i].hp = 100;
 				PLAYER_LIST[i].ammo = 100;
 				PLAYER_LIST[parentId].score++;
-				if(PLAYER_LIST[i].team === 'red'){
-					player.x = Math.random()*100+20;
-					player.y = Math.random()*100+20;
-				} else {
-					player.x = Math.random()*100+880;
-					player.y = Math.random()*100+480;
+				player.dead = true;
+				player.respawnCounter = 100;
+				player.x = -10;
+				player.y = -10;
+				
+				for(var i in SOCKET_LIST){
+					var socket = SOCKET_LIST[i];
+					socket.emit('patricleEffect',{type:1,x:bulletX,y:bulletY,color:player.team});
+				}
+			} else {
+				for(var i in SOCKET_LIST){
+					var socket = SOCKET_LIST[i];
+					socket.emit('patricleEffect',{type:2,x:bulletX,y:bulletY,color:player.team});
 				}
 			}
 			return true;

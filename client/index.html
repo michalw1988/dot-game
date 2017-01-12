@@ -65,6 +65,123 @@
 
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
+	var Particle = function(x,y,angle){
+		var self = {
+			x:x,
+			y:y,
+			angle:angle,
+			spin:Math.random()*360,
+		}
+		return self;
+	}
+	
+	var Effect = function(id,type,x,y,color){
+		var self = {
+			id:id,
+			type:type,
+			x:x,
+			y:y,
+			color:color,
+			r:0,
+			g:0,
+			b:0,
+			a:1,
+			lifeTime:20,
+			speed:0,
+			particles:{},
+		}
+		self.init = function(){	
+			if (self.color === 'red'){
+				self.r = 255;
+				self.g = 0;
+				self.b = 0;
+			} else if (self.color === 'blue'){
+				self.r = 0;
+				self.g = 0;
+				self.b = 255;
+			} else if (self.color === 'green'){
+				self.r = 0;
+				self.g = 200;
+				self.b = 0;
+			} else if (self.color === 'orange'){
+				self.r = 255;
+				self.g = 127;
+				self.b = 0;
+			} else if (self.color === 'black'){
+				self.r = 0;
+				self.g = 0;
+				self.b = 0;
+			}
+				
+			var particleCount = 10;
+			if (self.type === 1){
+				particleCount = 18;
+			}
+			for (var i = 0; i < particleCount; i++) {
+				var particle = Particle(self.x,self.y,i*360/particleCount);
+				self.particles[i] = particle;
+			}
+			
+			if(self.type === 1 || self.type === 4){
+				self.speed = 5;
+			} else if (self.type === 2){
+				self.speed = 3;
+			} else if (self.type === 3){
+				self.speed = 2;
+			}
+		}
+		self.draw = function(){
+			for(var i in self.particles){
+				var particle = self.particles[i];
+				if(self.type === 1){
+					var angle = particle.angle * Math.PI/180;
+					ctx.strokeStyle = 'rgba(' + self.r + ',' + self.g + ',' + self.b + ',' + self.a + ')';
+					ctx.beginPath();
+					ctx.moveTo(particle.x, particle.y);
+					ctx.lineTo(particle.x + 7*Math.sin(angle), particle.y + 7*Math.cos(angle));
+					ctx.closePath();
+					ctx.stroke();
+				} else if (self.type === 2 || self.type === 3){
+					var angle = particle.angle * Math.PI/180;
+					ctx.strokeStyle = 'rgba(' + self.r + ',' + self.g + ',' + self.b + ',' + self.a + ')';
+					ctx.beginPath();
+					ctx.moveTo(particle.x, particle.y);
+					ctx.lineTo(particle.x + 4*Math.sin(angle), particle.y + 4*Math.cos(angle));
+					ctx.closePath();
+					ctx.stroke();
+				} else if (self.type === 4){
+					ctx.fillStyle = 'rgba(' + self.r + ',' + self.g + ',' + self.b + ',' + self.a + ')';
+					ctx.save();
+					ctx.translate(particle.x, particle.y); // change origin
+					ctx.rotate(particle.spin*Math.PI/180);
+					ctx.fillRect(-4,-4,8,8);
+					ctx.restore();
+				}
+			}
+		}
+		self.update = function(){
+			if (self.lifeTime > 0){
+				for(var i in self.particles){
+					var particle = self.particles[i];
+					var angle = particle.angle * Math.PI/180;
+					particle.x += Math.sin(angle) * self.speed;
+					particle.y += Math.cos(angle) * self.speed;
+					particle.spin += 5;
+				}
+				self.a *= 0.7;
+				self.speed *= 0.87;
+				self.lifeTime--;
+			} else {
+				delete EFFECTS_LIST[self.id];
+			}
+		}
+		return self;
+	}
+	
+	var EFFECTS_LIST = {};
+	
+	
+	
 	var joinDiv = document.getElementById("joinDiv");
 	var joinDivUsername = document.getElementById("joinDiv-username");
 	var joinDivTeamAuto = document.getElementById("teamAuto");
@@ -146,8 +263,8 @@
 		}
 		
 		ctx.clearRect(0,0,WIDTH,HEIGHT);
-		teamRedDiv.innerHTML = "Team red:";
-		teamBlueDiv.innerHTML = "Team blue:";
+		teamRedDiv.innerHTML = "<b>Team red:</b>";
+		teamBlueDiv.innerHTML = "<b>Team blue:</b>";
 		
 		// zones
 		ctx.fillStyle = '#ffbbbb'; // red area
@@ -158,6 +275,7 @@
 		ctx.fillRect(20,480,100,100);
 		ctx.fillRect(880,20,100,100);
 		ctx.fillRect(430,260,140,80);
+		ctx.fillStyle = '#ffee99'; // ammo zones
 		ctx.fillStyle = '#ffee99'; // ammo zones
 		ctx.fillRect(150,220,60,160);
 		ctx.fillRect(790,220,60,160);
@@ -217,10 +335,14 @@
 			}
 			ctx.closePath();
 			// team members
+			var divStyle = '';
+			if(data.pack[i].dead === true){
+				divStyle = 'style="color:#888888;text-decoration:line-through"';
+			}
 			if(data.pack[i].team === 'red'){
-				teamRedDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
+				teamRedDiv.innerHTML += '<div ' + divStyle + '>' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
 			} else {
-				teamBlueDiv.innerHTML += '<div>- ' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
+				teamBlueDiv.innerHTML += '<div ' + divStyle + '>' + data.pack[i].name + ' (' + data.pack[i].score + ') ' + isMe + '</div>';
 			}
 		}
 		// bullets
@@ -234,11 +356,26 @@
 			ctx.closePath();
 			ctx.stroke();
 		}
+		
+		// effects
+		for(var i in EFFECTS_LIST){
+			var effect = EFFECTS_LIST[i];
+			effect.draw();
+			effect.update();
+		}
 	});
 	
 	socket.on('chatMessageToDisplay',function(data){
 		chatDiv.innerHTML += '<div>' + data + '</div>';
 		chatDiv.scrollTop = chatDiv.scrollHeight;
+	});
+	
+	socket.on('patricleEffect',function(data){
+		var id = Math.random();
+		var effect = Effect(id, data.type, data.x, data.y, data.color);
+		effect.init();
+		EFFECTS_LIST[id] = effect;
+		console.log('Effects: ' + Object.keys(EFFECTS_LIST).length);
 	});
 	
 	document.onkeydown = function(event){
