@@ -290,15 +290,19 @@
 			var bonus = data.bonus_pack[i];
 			if (bonus.type === 1){
 				ctx.fillStyle = '#ff8800';
-				ctx.fillRect(bonus.x,bonus.y,9,9);
+				ctx.beginPath();
+				ctx.arc(bonus.x+4.5,bonus.y+4.5,5,0,2*Math.PI);
+				ctx.fill();
 				ctx.fillStyle = '#ffffff';
-				ctx.fillRect(bonus.x+2,bonus.y+1,1,7);
-				ctx.fillRect(bonus.x+4,bonus.y+1,1,7);
-				ctx.fillRect(bonus.x+6,bonus.y+1,1,7);
+				ctx.fillRect(bonus.x+2.5,bonus.y+1,1,7);
+				ctx.fillRect(bonus.x+5.5,bonus.y+1,1,7);
 				
 			} else {
 				ctx.fillStyle = '#00cc00';
-				ctx.fillRect(bonus.x,bonus.y,9,9);
+				ctx.beginPath();
+				ctx.arc(bonus.x+4.5,bonus.y+4.5,5,0,2*Math.PI);
+				ctx.fill();
+				ctx.fillStyle = '#ffffff';
 				ctx.fillStyle = '#ffffff';
 				ctx.fillRect(bonus.x+1,bonus.y+4,7,1);
 				ctx.fillRect(bonus.x+4,bonus.y+1,1,7);
